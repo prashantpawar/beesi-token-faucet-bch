@@ -2,7 +2,8 @@ module Balance exposing (..)
 
 import Browser
 import Html exposing (Html, div, text)
-import Http exposing (Error)
+import Http exposing (..)
+import Json.Decode exposing (Decoder, field, int)
 
 
 main : Program () Model Msg
@@ -43,7 +44,7 @@ init _ =
 
 
 type Msg
-    = GotResponse (Result Http.Error String)
+    = GotResponse (Result Http.Error Int)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -52,10 +53,29 @@ update msg model =
         GotResponse result ->
             case result of
                 Ok fullResponse ->
-                    ( Success { message = fullResponse, blockcount = Nothing }, Cmd.none )
+                    ( Success { message = String.fromInt fullResponse, blockcount = Nothing }, Cmd.none )
 
-                Err _ ->
-                    ( Failure, Cmd.none )
+                Err x ->
+                    ( Success { message = errToString x, blockcount = Nothing }, Cmd.none )
+
+
+errToString : Error -> String
+errToString e =
+    case e of
+        BadUrl s ->
+            s
+
+        Timeout ->
+            "timeout"
+
+        NetworkError ->
+            "network error"
+
+        BadStatus x ->
+            "bat status " ++ String.fromInt x
+
+        BadBody x ->
+            x
 
 
 
@@ -92,9 +112,10 @@ getBlockcount : Cmd Msg
 getBlockcount =
     Http.get
         { url = "https://api.fullstack.cash/v4/electrumx/balance/bitcoincash:qr69kyzha07dcecrsvjwsj4s6slnlq4r8c30lxnur3"
-        , expect = Http.expectString GotResponse
+        , expect = Http.expectJson GotResponse balanceDecoder
         }
 
 
-blockcountDecoders =
-    ""
+balanceDecoder : Decoder Int
+balanceDecoder =
+    field "balance" (field "confirmed" int)
