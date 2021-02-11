@@ -1,18 +1,27 @@
 module Time exposing (..)
 
+-- elm-ui imports
+
 import Browser
-import Html exposing (Html, button, div, h1, text)
-import Html.Events exposing (onClick)
+import Browser.Navigation
+import Element exposing (Element, alignRight, centerY, el, fill, height, inFront, layout, padding, rgb255, row, spacing, text, width)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
+import Html exposing (Html)
 import Main exposing (init, subscriptions, update)
 import Random
+import Url
 
 
 main =
-    Browser.element
+    Browser.application
         { init = init
         , update = update
         , subscriptions = subscriptions
         , view = view
+        , onUrlChange = \_ -> NoOp
+        , onUrlRequest = \_ -> NoOp
         }
 
 
@@ -24,8 +33,12 @@ type alias Model =
     { dieFace : Int }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
+
+-- init : () -> ( Model, Cmd Msg )
+
+
+init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd msg )
+init _ url key =
     ( Model 1
     , Cmd.none
     )
@@ -38,6 +51,7 @@ init _ =
 type Msg
     = Roll
     | NewFace Int
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -48,6 +62,9 @@ update msg model =
 
         NewFace newFace ->
             ( Model newFace, Cmd.none )
+
+        NoOp ->
+            ( model, Cmd.none )
 
 
 
@@ -63,9 +80,18 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    div []
-        [ h1 [] [ text (String.fromInt model.dieFace) ]
-        , button [ onClick Roll ] [ text "Roll" ]
-        ]
+    { title = "Time"
+    , body = [ viewBody model ]
+    }
+
+
+viewBody : Model -> Html Msg
+viewBody _ =
+    layout [ width fill, height fill, inFront viewMenu ] <| el []
+
+
+viewMenu : Model -> Html Msg
+viewMenu _ =
+    row [] []
